@@ -123,10 +123,10 @@ export default {
       'setShowTasksInOneList',
     ]),
     visitOurWebsite() {
-      openURL('https://github.com/SeminVsevolod');
+      openURL('https://github.com/brunocode-s/universal-task-manager');
     },
     emailUs() {
-      window.location.href = 'mailto:semin.vsevolod@gmail.com?subject=Universal Todo Feedback';
+      window.location.href = 'mailto:alainbrunoofficial@gmail.com?subject=Universal Todo Feedback';
     },
   },
 };

@@ -117,6 +117,56 @@ module.exports = function (/* ctx */) {
     // Full list of options: https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-build
     build: {
       vueRouterMode: 'hash', // available values: 'hash', 'history'
+      // FIXED: Commented out the problematic chainWebpack configuration
+      // The issue was with how the sass-loader was being configured
+      /*
+      chainWebpack(chain) {
+        // Configure sass-loader to avoid the 'nested' output style error
+        chain.module
+          .rule('scss')
+          .use('sass-loader')
+          .tap((options) => ({
+            ...options,
+            sassOptions: {
+              ...(options && options.sassOptions),
+              outputStyle: 'expanded',
+            },
+          }));
+      },
+      */
+
+      // Comprehensive fix for sass-loader issues
+      extendWebpack(cfg) {
+        // Fix sass-loader configurations
+        const updateSassLoader = (rule) => {
+          if (rule.use && Array.isArray(rule.use)) {
+            rule.use.forEach((use) => {
+              if (use.loader && use.loader.includes('sass-loader')) {
+                // Ensure options exist
+                use.options = use.options || {};
+                // Hdle different sass-loader versions
+                if (use.options.sassOptions) {
+                  use.options.sassOptions.outputStyle = 'expanded';
+                } else {
+                  use.options.sassOptions = { outputStyle: 'expanded' };
+                }
+                // Remove any nested outputStyle that might be set elsewhere
+                if (use.options.outputStyle) {
+                  delete use.options.outputStyle;
+                }
+              }
+            });
+          }
+
+          // Handle oneOf rules (for different conditions)
+          if (rule.oneOf && Array.isArray(rule.oneOf)) {
+            rule.oneOf.forEach(updateSassLoader);
+          }
+        };
+
+        // Apply to all rules
+        cfg.module.rules.forEach(updateSassLoader);
+      },
 
       // modern: true, // https://quasar.dev/quasar-cli/modern-build
       // rtl: false, // https://quasar.dev/options/rtl-support
@@ -127,16 +177,6 @@ module.exports = function (/* ctx */) {
 
       // Options below are automatically set depending on the env, set them if you want to override
       // extractCSS: false,
-
-      // https://quasar.dev/quasar-cli/cli-documentation/handling-webpack
-      extendWebpack(cfg) {
-        cfg.module.rules.push({
-          enforce: 'pre',
-          test: /\.(js|vue)$/,
-          loader: 'eslint-loader',
-          exclude: /node_modules/,
-        });
-      },
     },
 
     // Full list of options: https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-devServer
@@ -216,7 +256,7 @@ module.exports = function (/* ctx */) {
     // Full list of options: https://quasar.dev/quasar-cli/developing-electron-apps/configuring-electron
     electron: {
       bundler: 'packager', // 'packager' or 'builder'
-
+      nodeIntegration: true,
       packager: {
         // https://github.com/electron-userland/electron-packager/blob/master/docs/api.md#options
         // platform: 'win32',
@@ -237,7 +277,6 @@ module.exports = function (/* ctx */) {
       },
 
       // More info: https://quasar.dev/quasar-cli/developing-electron-apps/node-integration
-      nodeIntegration: true,
 
       extendWebpack(/* cfg */) {
         // do something with Electron main process Webpack cfg

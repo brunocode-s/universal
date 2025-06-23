@@ -122,7 +122,12 @@
 <script>
 import NavLink from 'components/NavLink';
 import { mapState, mapActions } from 'vuex';
-import electron from 'electron';
+
+let electron = null;
+if (process.env.MODE === 'electron') {
+  // eslint-disable-next-line global-require
+  electron = require('electron');
+}
 
 export default {
   name: 'MainLayout',
@@ -151,15 +156,13 @@ export default {
   },
 
   computed: {
-    ...mapState('auth', [
-      'loggedIn',
-    ]),
+    ...mapState('auth', ['loggedIn']),
   },
 
   methods: {
     ...mapActions('auth', ['logoutUser']),
     quitApp() {
-      if (this.$q.platform.is.electron) {
+      if (this.$q.platform.is.electron && electron) {
         electron.ipcRenderer.send('quit-app');
       }
     },
